@@ -11,6 +11,16 @@ openstack:
   allow_write: false
   ca_cert: ./tls-ca-bundle.pem
   insecure: false
+  # Prometheus/Aetos (metric-storage) connection used by `openstack metric ...`.
+  # Required on RHOSO 18, where metric-storage is not in the Keystone catalog and
+  # cannot be auto-discovered. Omit on RHOSO 19+ (discovered from Keystone).
+  # Env vars PROMETHEUS_HOST/PROMETHEUS_PORT/PROMETHEUS_CA_CERT/PROMETHEUS_ROOT_PATH
+  # override these values if set.
+  #prometheus:
+  #  host: metric-storage-prometheus.openstack.svc
+  #  port: 9090
+  #  ca_cert: ./tls-ca-bundle.pem
+  #  root_path: null
 
 openshift:
   allow_write: false

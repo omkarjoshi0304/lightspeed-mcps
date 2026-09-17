@@ -12,6 +12,29 @@ from rhos_ls_mcps import oc_defaults
 logger = logging.getLogger(__name__)
 
 
+class PrometheusSettings(BaseSettings):
+    """Prometheus/Aetos (metric-storage) connection for the observabilityclient.
+
+    Needed on RHOSO 18, where the metric-storage service is not registered in the
+    Keystone catalog and therefore cannot be auto-discovered. Not required on
+    RHOSO 19+, where the client discovers the endpoint from Keystone.
+    """
+
+    host: Optional[str] = Field(
+        default=None, description="Prometheus/Aetos host (Env: PROMETHEUS_HOST)"
+    )
+    port: Optional[int] = Field(
+        default=None, description="Prometheus/Aetos port (Env: PROMETHEUS_PORT)"
+    )
+    ca_cert: Optional[str] = Field(
+        default=None,
+        description="CA cert bundle for Prometheus TLS (Env: PROMETHEUS_CA_CERT)",
+    )
+    root_path: Optional[str] = Field(
+        default=None, description="Prometheus root path (Env: PROMETHEUS_ROOT_PATH)"
+    )
+
+
 class OpenStackSettings(BaseSettings):
     enabled: bool = Field(default=True, description="Enable OpenStack MCP tools")
     allow_write: bool = Field(
@@ -22,6 +45,10 @@ class OpenStackSettings(BaseSettings):
     )
     insecure: bool = Field(
         default=False, description="Allow insecure SSL connections (Env: OS_INSECURE)"
+    )
+    prometheus: PrometheusSettings = Field(
+        default=PrometheusSettings(),
+        description="Prometheus/Aetos (metric-storage) settings for the observabilityclient",
     )
 
 
