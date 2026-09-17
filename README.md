@@ -110,6 +110,7 @@ These go under the `openstack` key:
 - `allow_write`: Whether to allow write operations or not. Default `false`.
 - `ca_cert`: CA certificate bundle file location. Default `""`.
 - `insecure`: Whether to allow insecure SSL connections or not. Default `false`.
+- `prometheus`: Prometheus/Aetos (metric-storage) connection used by `openstack metric ...` commands. Goes under the `openstack.prometheus` key with fields `host`, `port`, `ca_cert`, `root_path`. Required on **RHOSO 18**, where the `metric-storage` service is not registered in the Keystone catalog and cannot be auto-discovered; omit it on **RHOSO 19+**, where the observabilityclient discovers the endpoint from Keystone. The equivalent environment variables `PROMETHEUS_HOST`, `PROMETHEUS_PORT`, `PROMETHEUS_CA_CERT`, `PROMETHEUS_ROOT_PATH` override these values when set (a mounted `/etc/openstack/prometheus.yaml` also works).
 
 ## OpenShift
 
