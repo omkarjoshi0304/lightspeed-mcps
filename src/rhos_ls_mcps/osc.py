@@ -141,7 +141,29 @@ def initialize(mcp_osp: MCPServer):
     if settings.CONFIG.openstack.insecure:
         OSC_PARAMS.append("--insecure")
 
+    _configure_prometheus_env()
+
     ALLOWED_COMMANDS = osp_list_commands(ACCEPT_COMMANDS)[0]
+
+
+def _configure_prometheus_env() -> None:
+    """Export Prometheus/Aetos env vars for the observabilityclient (metric-storage).
+
+    On RHOSO 18 the metric-storage service is not in the Keystone catalog, so the
+    observabilityclient cannot auto-discover Aetos. It falls back to these env
+    vars. Set here at startup so the forked command workers inherit them. Values
+    already present in the environment win, so operator-provided config is kept.
+    """
+    prom = settings.CONFIG.openstack.prometheus
+    env_map = {
+        "PROMETHEUS_HOST": prom.host,
+        "PROMETHEUS_PORT": str(prom.port) if prom.port else None,
+        "PROMETHEUS_CA_CERT": prom.ca_cert,
+        "PROMETHEUS_ROOT_PATH": prom.root_path,
+    }
+    for name, value in env_map.items():
+        if value and name not in os.environ:
+            os.environ[name] = value
 
 
 ##########
@@ -249,11 +271,36 @@ async def openstack_cli_mcp_tool(command_str: str, ctx: Context) -> str:
     }
 
     if ret_value:
+        metric_storage_msg = _metric_storage_error(stderr)
+        if metric_storage_msg:
+            raise ToolError(metric_storage_msg)
         raise ToolError(
             "openstack failed with error code {}: {}".format(ret_value, result)
         )
 
     return stdout or stderr
+
+
+def _metric_storage_error(stderr: str) -> Optional[str]:
+    """Return a clear message when the failure is a missing metric-storage config.
+
+    The observabilityclient's own error points at Prometheus host/port, which
+    hides the real cause: the metric-storage (Aetos) endpoint can't be reached.
+    """
+    if (
+        "Failed to configure Prometheus client" not in stderr
+        and "metric-storage" not in stderr
+    ):
+        return None
+    return (
+        "The 'metric-storage' (Aetos/Prometheus) endpoint could not be reached, so "
+        "metric commands cannot run. On RHOSO 18 it is not registered in the Keystone "
+        "catalog, so it must be configured explicitly: set the 'openstack.prometheus' "
+        "section (host/port/ca_cert) in the MCP config, or the PROMETHEUS_HOST / "
+        "PROMETHEUS_PORT / PROMETHEUS_CA_CERT environment variables on the MCP server, "
+        "or mount a prometheus.yaml under /etc/openstack. "
+        "Original error: {}".format(stderr.strip())
+    )
 
 
 class MyOpenStackShell(osc_shell.OpenStackShell):
