@@ -150,9 +150,13 @@ def _configure_prometheus_env() -> None:
     """Export Prometheus/Aetos env vars for the observabilityclient (metric-storage).
 
     On RHOSO 18 the metric-storage service is not in the Keystone catalog, so the
-    observabilityclient cannot auto-discover Aetos. It falls back to these env
-    vars. Set here at startup so the forked command workers inherit them. Values
-    already present in the environment win, so operator-provided config is kept.
+    observabilityclient cannot auto-discover Aetos. It falls back to env vars or a
+    /etc/openstack/prometheus.yaml file, with env vars winning per field when both
+    are set. Set here at startup so the forked command workers inherit them.
+
+    A value already present in the environment is never overridden, so an
+    operator-set env var always wins over this config; when we do set one, it's
+    then indistinguishable from an operator-set one to the observabilityclient.
     """
     prom = settings.CONFIG.openstack.prometheus
     env_map = {

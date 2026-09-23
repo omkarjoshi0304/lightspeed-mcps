@@ -112,6 +112,12 @@ These go under the `openstack` key:
 - `insecure`: Whether to allow insecure SSL connections or not. Default `false`.
 - `prometheus`: Prometheus/Aetos (metric-storage) connection used by `openstack metric ...` commands. Goes under the `openstack.prometheus` key with fields `host`, `port`, `ca_cert`, `root_path`. Required on **RHOSO 18**, where the `metric-storage` service is not registered in the Keystone catalog and cannot be auto-discovered; omit it on **RHOSO 19+**, where the observabilityclient discovers the endpoint from Keystone. The equivalent environment variables `PROMETHEUS_HOST`, `PROMETHEUS_PORT`, `PROMETHEUS_CA_CERT`, `PROMETHEUS_ROOT_PATH` override these values when set (a mounted `/etc/openstack/prometheus.yaml` also works).
 
+  There are three ways to provide this configuration, and only one wins per field when more than one is set. Priority, highest to lowest:
+
+  1. **Environment variables** (`PROMETHEUS_HOST`/`PROMETHEUS_PORT`/`PROMETHEUS_CA_CERT`/`PROMETHEUS_ROOT_PATH`) set directly on the container — always wins.
+  2. **This `openstack.prometheus` section** — only takes effect for a field that has no environment variable already set; when it applies, it works by setting that environment variable itself, so from the observabilityclient's point of view it's indistinguishable from case 1.
+  3. **A mounted `/etc/openstack/prometheus.yaml`** — read directly by the observabilityclient, and only used for a field that isn't covered by an environment variable from either of the cases above.
+
 ## OpenShift
 
 These go under the `openshift` key:
